@@ -1,3 +1,5 @@
+import logging
+
 from telegram.ext import (
     Updater, CommandHandler,
     MessageHandler,
@@ -5,11 +7,11 @@ from telegram.ext import (
 )
 
 from src.config import get_config
+from src.decorators import log_non_admin_users
 from src.handlers import (
     start_handler,
     word_handler,
     help_handler,
-    error_handler
 )
 
 
@@ -18,6 +20,15 @@ def main():
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
     config = get_config()
+
+    # Enable logging
+    logging.basicConfig(
+        format=config.LOGGER_FORMAT,
+        level=config.LOGGER_LEVEL
+    )
+
+    logger = logging.getLogger("Pig Latin Bot")
+
     updater = Updater(config.BOT_TOKEN)
 
     # Get the dispatcher to register handlers
@@ -26,7 +37,10 @@ def main():
     # Attach handlers to dispatcher
     dp.add_handler(CommandHandler(
         command="start",
-        callback=start_handler,
+        callback=log_non_admin_users(
+            logger,
+            config.ADMIN_ID
+        )(start_handler),
     ))
 
     dp.add_handler(CommandHandler(
@@ -41,7 +55,10 @@ def main():
     ))
 
     # Log all errors
-    dp.add_error_handler(error_handler)
+    dp.add_error_handler(
+        lambda bot, update, error:
+        logger.error(f'An error occurred. BOT: "{bot}". DETAILS: "{error}".')
+    )
 
     # Start the Bot
     updater.start_polling()

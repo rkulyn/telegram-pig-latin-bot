@@ -8,39 +8,66 @@ from .utils import (
 )
 
 
-def check_if_word_capitalized(func):
+def check_if_word_capitalized(translate_func):
     """
     Check if word is capitalized
     before translation
     and fix translated word to be consistent.
 
     Args:
-        func (callable): Decorated func (translate).
+        translate_func (callable): Decorated func (translate).
 
     """
-    @wraps(func)
+    @wraps(translate_func)
     def decorated(word):
-        result = func(word)
+        result = translate_func(word)
         return result.capitalize() if is_word_capitalized(word) else result
 
     return decorated
 
 
-def emulate_typing(func):
+def emulate_typing(handler):
     """
     Send "typing..." message
     when handler is being processed.
 
     Args:
-        func (callable): Decorated handler.
+        handler (callable): Decorated handler.
 
     """
-    @wraps(func)
+    @wraps(handler)
     def decorated(bot, update, **session_data):
         bot.send_chat_action(
             chat_id=get_chat_id(update),
             action=telegram.ChatAction.TYPING
         )
-        return func(bot, update, **session_data)
+        return handler(bot, update, **session_data)
 
     return decorated
+
+
+def log_non_admin_users(logger, admin_id):
+    """
+    Log all incoming non-admin users.
+    (For statistic only).
+
+    Args:
+        logger (instance): Logger.
+        admin_id (int): Admin ID.
+
+    Returns:
+        handler (callable): Decorated handler.
+
+    """
+    def decorator(handler):
+
+        @wraps(handler)
+        def decorated(bot, update, **session_data):
+            user_id = update.effective_user["id"]
+            if user_id != admin_id:
+                logger.info(f"User connected ({update.effective_user}).")
+            return handler(bot, update, **session_data)
+
+        return decorated
+
+    return decorator

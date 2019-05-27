@@ -1,25 +1,11 @@
 import re
-import logging
 import telegram
 
 from emoji import emojize
 
-
-from .config import get_config
 from .decorators import emulate_typing
 from .translate import translate
 from .utils import get_chat_id
-
-
-config = get_config()
-
-# Enable logging
-logging.basicConfig(
-    format=config.LOGGER_FORMAT,
-    level=config.LOGGER_LEVEL
-)
-
-logger = logging.getLogger("Pig Latin Bot")
 
 
 @emulate_typing
@@ -36,10 +22,6 @@ def start_handler(bot, update, **session_data):
     Returns: None.
 
     """
-    user_id = update.effective_user["id"]
-    if user_id != config.ADMIN_ID:
-        logger.info(f"User connected ({update.effective_user}).")
-
     message = (
         "<b>Hello there!</b>\n\n"
         "I'm Pig Latin Translation Bot. \n\n"
@@ -125,22 +107,4 @@ def help_handler(bot, update, **session_data):
         chat_id=get_chat_id(update),
         disable_web_page_preview=True,
         parse_mode=telegram.ParseMode.HTML,
-    )
-
-
-def error_handler(bot, update, error):
-    """
-    Error handler.
-    Log raised error.
-
-    Args:
-        bot (instance): Bot.
-        update (instance): Incoming update.
-        error (instance): Error.
-
-    Returns: None.
-
-    """
-    logger.error(
-        f'An error occurred. BOT: "{bot}". DETAILS: "{error}".'
     )
